@@ -1,13 +1,43 @@
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { integer, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
 
-// Define the 'demo_users' table
-export const demoUsers = pgTable("demo_users", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
+const timestamps = {
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+};
+
+export const departments = pgTable("departments", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: varchar("description", { length: 255 }),
+  ...timestamps,
 });
 
-// Export types for type-safe queries
-export type User = typeof demoUsers.$inferSelect;
-export type NewUser = typeof demoUsers.$inferInsert;
+export const subjects = pgTable("subjects", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  departmentId: integer("department_id")
+    .notNull()
+    .references(() => departments.id, { onDelete: "restrict" }),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: varchar("description", { length: 255 }),
+  ...timestamps,
+});
+
+export const departmentRelations = relations(departments, ({ many }) => ({
+  subjects: many(subjects),
+}));
+
+export const subjectRelations = relations(subjects, ({ one, many }) => ({
+  department: one(departments, {
+    fields: [subjects.departmentId],
+    references: [departments.id],
+  }),
+}));
+
+export type Department = typeof departments.$inferSelect;
+export type NewDepartment = typeof departments.$inferInsert;
+
+export type Subject = typeof subjects.$inferSelect;
+export type NewSubject = typeof subjects.$inferInsert;
