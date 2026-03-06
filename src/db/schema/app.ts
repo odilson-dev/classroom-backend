@@ -6,7 +6,7 @@ const timestamps = {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 };
 
-const departments = pgTable("departments", {
+export const departments = pgTable("departments", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   code: varchar("code", { length: 50 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -14,7 +14,7 @@ const departments = pgTable("departments", {
   ...timestamps,
 });
 
-const subjects = pgTable("subjects", {
+export const subjects = pgTable("subjects", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   departmentId: integer("department_id")
     .notNull()
@@ -28,3 +28,13 @@ const subjects = pgTable("subjects", {
 export const departmentRelations = relations(departments, ({ many }) => ({
   subjects: many(subjects),
 }));
+
+export const subjectRelations = relations(subjects, ({ one, many }) => ({
+  department: one(departments, {
+    fields: [subjects.departmentId],
+    references: [departments.id],
+  }),
+}));
+
+export type Department = typeof departments.$inferInsert;
+export type NewDepartment = typeof departments.$inferInsert;
